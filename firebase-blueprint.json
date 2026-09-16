@@ -1,0 +1,56 @@
+{
+  "Users": {
+    "description": "Store application users like teachers/admins.",
+    "documents": {
+      "admin_user_id": {
+        "UserID": "U001",
+        "Username": "admin",
+        "Password": "password",
+        "Nama": "Admin Utama",
+        "Role": "Admin",
+        "KelasAmpuan": "Semua"
+      },
+      "guru_1_id": {
+        "UserID": "U002",
+        "Username": "guru1",
+        "Password": "password",
+        "Nama": "Bapak Guru",
+        "Role": "Guru",
+        "KelasAmpuan": "10A"
+      }
+    }
+  },
+  "Siswa": {
+    "description": "Store student data.",
+    "documents": {
+      "siswa_1_id": {
+        "NIS": "12345",
+        "Nama": "Ahmad",
+        "Kelas": "10A",
+        "JenisKelamin": "L"
+      },
+      "siswa_2_id": {
+        "NIS": "12346",
+        "Nama": "Budi",
+        "Kelas": "10A",
+        "JenisKelamin": "L"
+      }
+    }
+  },
+  "Absensi": {
+    "description": "Store attendance records.",
+    "documents": {
+      "absensi_1_id": {
+        "ID_Absensi": "A001",
+        "Timestamp": "2023-10-27T10:00:00Z",
+        "Tanggal": "2023-10-27",
+        "Kelas": "10A",
+        "NIS": "12345",
+        "Nama": "Ahmad",
+        "Status": "Hadir",
+        "Keterangan": "-",
+        "DiinputOleh": "guru1"
+      }
+    }
+  }
+}

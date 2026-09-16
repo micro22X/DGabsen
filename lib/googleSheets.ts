@@ -1,68 +1,67 @@
-import { google } from 'googleapis';
-
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
-
-function getAuth() {
-  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-  // Handle newline characters in the private key
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-  if (!clientEmail || !privateKey) {
-    console.warn('Google credentials are not set in environment variables. Using dummy mode.');
-    return null;
-  }
-
-  return new google.auth.JWT({
-    email: clientEmail,
-    key: privateKey,
-    scopes: SCOPES,
-  });
-}
+import { db } from './firebase';
+import { collection, getDocs, addDoc, doc, setDoc } from 'firebase/firestore';
 
 export async function getSheetData(range: string) {
-  const auth = getAuth();
-  if (!auth) return [];
-  
-  const sheets = google.sheets({ version: 'v4', auth });
-  const sheetId = process.env.GOOGLE_SHEET_ID;
-
-  if (!sheetId) throw new Error('GOOGLE_SHEET_ID is missing');
-
   try {
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId,
-      range,
-    });
-    return response.data.values || [];
+    if (range.startsWith('Users')) {
+      const snapshot = await getDocs(collection(db, 'Users'));
+      return snapshot.docs.map(doc => {
+        const d = doc.data();
+        return [d.UserID, d.Username, d.Password, d.Nama, d.Role, d.KelasAmpuan];
+      });
+    } else if (range.startsWith('Siswa')) {
+      const snapshot = await getDocs(collection(db, 'Siswa'));
+      return snapshot.docs.map(doc => {
+        const d = doc.data();
+        return [d.NIS, d.Nama, d.Kelas, d.JenisKelamin];
+      });
+    } else if (range.startsWith('Absensi')) {
+      const snapshot = await getDocs(collection(db, 'Absensi'));
+      return snapshot.docs.map(doc => {
+        const d = doc.data();
+        return [d.ID_Absensi, d.Timestamp, d.Tanggal, d.Kelas, d.NIS, d.Nama, d.Status, d.Keterangan, d.DiinputOleh];
+      });
+    }
+    return [];
   } catch (error) {
-    console.error('Error fetching sheet data:', error);
-    // Silent fail for empty sheet or invalid range during initialization
+    console.error('Error fetching data from Firestore:', error);
     return [];
   }
 }
 
 export async function appendSheetData(range: string, values: any[][]) {
-  const auth = getAuth();
-  if (!auth) {
-    console.warn('Google credentials missing. Simulating successful append.');
-    return { updates: { updatedRows: values.length } };
-  }
-  
-  const sheets = google.sheets({ version: 'v4', auth });
-  const sheetId = process.env.GOOGLE_SHEET_ID;
-
   try {
-    const response = await sheets.spreadsheets.values.append({
-      spreadsheetId: sheetId,
-      range,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values,
-      },
-    });
-    return response.data;
+    if (range.startsWith('Absensi')) {
+      for (const row of values) {
+        await addDoc(collection(db, 'Absensi'), {
+          ID_Absensi: row[0] || '',
+          Timestamp: row[1] || new Date().toISOString(),
+          Tanggal: row[2] || '',
+          Kelas: row[3] || '',
+          NIS: row[4] || '',
+          Nama: row[5] || '',
+          Status: row[6] || '',
+          Keterangan: row[7] || '',
+          DiinputOleh: row[8] || ''
+        });
+      }
+    } else if (range.startsWith('Users')) {
+       for (const row of values) {
+        await addDoc(collection(db, 'Users'), {
+          UserID: row[0], Username: row[1], Password: row[2], Nama: row[3], Role: row[4], KelasAmpuan: row[5]
+        });
+      }
+    } else if (range.startsWith('Siswa')) {
+       for (const row of values) {
+        await addDoc(collection(db, 'Siswa'), {
+          NIS: row[0], Nama: row[1], Kelas: row[2], JenisKelamin: row[3]
+        });
+      }
+    }
+    
+    return { updates: { updatedRows: values.length } };
   } catch (error) {
-    console.error('Error appending sheet data:', error);
+    console.error('Error appending data to Firestore:', error);
     throw error;
   }
 }
