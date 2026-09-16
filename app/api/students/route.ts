@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSheetData } from '@/lib/googleSheets';
+import { getSheetData, appendSheetData } from '@/lib/googleSheets';
 import { getSession } from '@/lib/auth';
 
 export async function GET(request: Request) {
@@ -22,16 +22,6 @@ export async function GET(request: Request) {
       jk: row[3],
     }));
 
-    // If local test without data, provide dummy data
-    if (students.length === 0) {
-      students = [
-        { nis: '1001', nama: 'Ahmad Budi', kelas: '10A', jk: 'L' },
-        { nis: '1002', nama: 'Siti Aminah', kelas: '10A', jk: 'P' },
-        { nis: '1003', nama: 'Caca Marica', kelas: '10B', jk: 'P' },
-        { nis: '1004', nama: 'Dedi Corbuzier', kelas: '10B', jk: 'L' },
-      ];
-    }
-
     if (kelas) {
       students = students.filter(s => s.kelas === kelas);
     } else if (session.role === 'Wali Kelas') {
@@ -42,5 +32,27 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Students error:', error);
     return NextResponse.json({ error: 'Failed to fetch students' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== 'Admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { nis, nama, kelas, jk } = await request.json();
+    
+    if (!nis || !nama || !kelas || !jk) {
+      return NextResponse.json({ error: 'Semua field wajib diisi' }, { status: 400 });
+    }
+
+    await appendSheetData('Siswa!A:D', [[nis, nama, kelas, jk]]);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Add student error:', error);
+    return NextResponse.json({ error: 'Gagal menambahkan siswa' }, { status: 500 });
   }
 }

@@ -1,1 +1,31 @@
 @import "tailwindcss";
+
+@media print {
+  /* Hide all elements by default when printing except those inside .print-container */
+  body * {
+    visibility: hidden;
+  }
+  
+  .print-page, .print-page * {
+    visibility: visible;
+  }
+  
+  .print-page {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .no-print, .no-print * {
+    display: none !important;
+  }
+
+  /* Force background colors to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
